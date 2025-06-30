@@ -1,13 +1,21 @@
-# Use an official OpenJDK runtime as base image
-FROM openjdk:17-jdk-slim
+# Base image with Maven and JDK
+FROM maven:3.9.6-eclipse-temurin-17 as builder
 
-# Set the working directory
+# Set working dir and copy source
+WORKDIR /app
+COPY . .
+
+# Build the project (skip tests for faster build)
+RUN mvn clean package -DskipTests
+
+# ---- Create final image ----
+FROM openjdk:17-jdk-slim
 WORKDIR /app
 
-# Copy the jar file (make sure it exists after mvn package)
-COPY target/*.jar app.jar
+# Copy built jar from previous stage
+COPY --from=builder /app/target/*.jar app.jar
 
-# Expose port (Render will override with its own PORT env variable)
+# Expose port
 EXPOSE 8080
 
 # Run the application
